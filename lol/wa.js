@@ -194,8 +194,8 @@ exports.demoteAdmin = async(to, target = []) => {
 }
 
 exports.getUserName = async(jid) => {
-    const user = await lolhuman.contacts[jid]
-    return user.notify
+    const user = lolhuman.contacts[jid]
+    return user != undefined ? user.notify : ""
 }
 
 exports.getBio = async(mids) => {

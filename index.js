@@ -281,12 +281,12 @@ lolhuman.on('chat-update', async(lol) => {
                 // Group //
             case 'hidetag':
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
-                if (!isAdmin) return await reply('Sorry nih sorry, lu bukan admin')
+                if (!isAdmin && !isOwner && !istMe) return await reply('Sorry nih sorry, lu bukan admin')
                 await wa.hideTag(from, args.join(" "))
                 break
             case 'imagetag':
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
-                if (!isAdmin) return await reply('Sorry nih sorry, lu bukan admin')
+                if (!isAdmin && !isOwner && !istMe) return await reply('Sorry nih sorry, lu bukan admin')
                 if (!isQuotedImage && !isImage) return await reply('Gambarnya mana?')
                 media = isQuotedImage ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 buffer = await lolhuman.downloadMediaMessage(media)
@@ -294,7 +294,7 @@ lolhuman.on('chat-update', async(lol) => {
                 break
             case 'stickertag':
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
-                if (!isAdmin) return await reply('Sorry nih sorry, lu bukan admin')
+                if (!isAdmin && !isOwner && !istMe) return await reply('Sorry nih sorry, lu bukan admin')
                 if (!isQuotedImage && !isImage) return await reply('Stickernya mana?')
                 media = isQuotedSticker ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 buffer = await lolhuman.downloadMediaMessage(media)
