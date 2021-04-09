@@ -15,8 +15,8 @@
 
 ## Cloning this repo
 ```cmd
-> git clone https://github.com/LoL-Human/Case-WA-Bot.git
-> cd Case-WA-Bot
+> git clone https://github.com/LoL-Human/Self-Bot.git
+> cd Self-Bot
 ```
 
 ## Install the package
