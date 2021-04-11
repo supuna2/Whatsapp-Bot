@@ -39,14 +39,14 @@ lolhuman.on('group-participants-update', async(chat) => {
                 var group = await lolhuman.groupMetadata(from)
 
                 // Member Join
-                if (chat.action == 'add') {
+                if (chat.action == 'add' && public) {
                     getBuffer(`https://api.lolhuman.xyz/api/welcomeimage?apikey=${apikey}&img=${photo}&text=${username}`).then(image => {
                         text = `${username}, Welkam to ${group.subject}`
                         wa.sendImage(from, image, text)
                     })
                 }
                 // Member Leave
-                if (chat.action == 'remove') {
+                if (chat.action == 'remove' && public) {
                     text = `${username}, Sayonara 👋`
                     await wa.sendMessage(from, text)
                 }
@@ -156,11 +156,9 @@ lolhuman.on('chat-update', async(lol) => {
         if (isImage && isGroup && antinsfw.includes(from)) {
             filebuffer = await wa.downloadMedia(lol)
             formdata = new FormData()
-            formdata.append('img', filebuffer.stream, { knownLength: filebuffer.size });
-            postJson(`https://api.lolhuman.xyz/api/nsfwcheck?apikey=${apikey}`, formdata).then((result) => {
-                console.log(result.result)
-                if (Number(result.result.replace("%", "")) >= 30) return wa.sendFakeStatus(from, "NSFW Detected", "WARNING")
-            })
+            formdata.append('img', filebuffer, filebuffer.fileName)
+            result = await postJson(`https://api.lolhuman.xyz/api/nsfwcheck?apikey=${apikey}`, formdata)
+            if (Number(result.result.replace("%", "")) >= 30) return wa.sendFakeStatus(from, "NSFW Detected with score: " + result.result, "WARNING")
         }
 
 
@@ -177,12 +175,10 @@ lolhuman.on('chat-update', async(lol) => {
                 username = await wa.getUserName(sender)
                 username = encodeURI(username)
                 photo = await wa.getPictProfile(sender)
-                getBuffer(`https://api.lolhuman.xyz/api/welcomeimage?apikey=${apikey}&img=${photo}&text=${username}`)
-                    .then(async(image) => {
-                        text = `Hello, @${senderNumber}\n\n`
-                        text += `Verifikasi telah berhasil dilakukan. Silahkan ketik ${prefix}help untuk melihat list command.`
-                        await lolhuman.sendMessage(from, image, MessageType.image, { contextInfo: { mentionedJid: [sender], participant: sender }, caption: text })
-                    })
+                result = await getBuffer(`https://api.lolhuman.xyz/api/welcomeimage?apikey=${apikey}&img=${photo}&text=${username}`)
+                text = `Hello, @${senderNumber}\n\n`
+                text += `Verifikasi telah berhasil dilakukan. Silahkan ketik ${prefix}help untuk melihat list command.`
+                await wa.sendImage(from, result, text, [sender])
                 break
 
 
@@ -362,10 +358,10 @@ lolhuman.on('chat-update', async(lol) => {
                 if (!isAdmin) return await reply('Sorry nih sorry, lu bukan admin')
                 if (args[0] === '1') {
                     if (antinsfw.indexOf(from) === -1) antinsfw.push(from)
-                    await wa.sendFakeStatus(from, "NSFW telah diaktifkan di group " + groupName, "GROUP SETTING")
+                    await wa.sendFakeStatus(from, "Anti NSFW telah diaktifkan di group " + groupName, "GROUP SETTING")
                 } else if (args[0] === '0') {
                     antinsfw.splice(from, 1)
-                    await wa.sendFakeStatus(from, "NSFW telah dinonaktifkan di group " + groupName, "GROUP SETTING")
+                    await wa.sendFakeStatus(from, "Anti NSFW telah dinonaktifkan di group " + groupName, "GROUP SETTING")
                 } else {
                     return await reply(`Example: ${prefix}${command} 1/0`)
                 }
@@ -379,19 +375,23 @@ lolhuman.on('chat-update', async(lol) => {
                 media = isQuotedImage ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 filebuffer = await wa.downloadMedia(media)
                 formdata = new FormData()
-                formdata.append('img', filebuffer.stream, { knownLength: filebuffer.size });
+                formdata.append('img', filebuffer, filebuffer.fileName)
                 formdata.append('text', args.join(" "));
-                postBuffer(`https://api.lolhuman.xyz/api/quotemaker3?apikey=${apikey}`, formdata).then((image) => {
-                    wa.sendImage(from, image)
-                })
+                result = await postBuffer(`https://api.lolhuman.xyz/api/quotemaker3?apikey=${apikey}`, formdata)
+                await wa.sendImage(from, result)
                 break
+
+            case 'waifu':
+                result = await getBuffer(`https://api.lolhuman.xyz/api/random/waifu?apikey=${apikey}`)
+                await wa.sendImage(from, result)
             default:
                 if (body.startsWith(">")) {
                     if (!isOwner) return await reply('Maap ni, gw gk kenal lu')
-                    return await reply(JSON.stringify(eval(args.join(" ")), null, 2))
+                    return await reply(JSON.stringify(eval(body.slice(1).trim()), null, 2))
                 }
         }
     } catch (e) {
+        throw e
         console.log(chalk.whiteBright("├"), chalk.keyword("aqua")("[  ERROR  ]"), chalk.keyword("red")(e))
     }
 })

@@ -1,57 +1,42 @@
 const fetch = require('node-fetch')
+const axios = require('axios')
 
 exports.getBuffer = async(url) => {
-    try {
-        const res = await fetch(url, {
-            headers: {
-                'User-Agent': 'okhttp/4.5.0'
-            },
-            method: 'GET'
-        })
-        return res.buffer()
-    } catch (e) {
-        throw e
-    }
+    const res = await axios.get(url, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36.',
+        },
+        responseType: 'arraybuffer'
+    }).catch(err => { throw err })
+    return res.data
 }
 
 exports.postBuffer = async(url, formdata) => {
-    try {
-        options = {
-            method: 'POST',
-            body: formdata
-        }
-        const res = await fetch(url, options)
-        return res.buffer()
-    } catch (e) {
-        throw e
-    }
+    const res = await axios.post(url, formdata, {
+        headers: {
+            'Content-Type': `multipart/form-data; boundary=${formdata._boundary}`,
+        },
+        responseType: 'arraybuffer'
+    }).catch(err => { throw err })
+    return res.data
 }
 
 exports.getJson = async(url) => {
-    try {
-        const res = await fetch(url, {
-            headers: {
-                'User-Agent': 'okhttp/4.5.0'
-            },
-            method: 'GET'
-        })
-        return res.json()
-    } catch (e) {
-        throw e
-    }
+    const res = await axios.get(url, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36.',
+        }
+    }).catch(err => { throw err })
+    return res.data
 }
 
 exports.postJson = async(url, formdata) => {
-    try {
-        options = {
-            method: 'POST',
-            body: formdata
+    const res = await axios.post(url, formdata, {
+        headers: {
+            'Content-Type': `multipart/form-data; boundary=${formdata._boundary}`,
         }
-        const res = await fetch(url, options)
-        return res.json()
-    } catch (e) {
-        throw e
-    }
+    }).catch(err => { throw err })
+    return res.data
 }
 
 exports.getRandomExt = (ext) => {

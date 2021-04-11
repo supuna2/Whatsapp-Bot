@@ -82,6 +82,7 @@ exports.help = (name, prefix) => {
 ├❏ ${prefix}group open/close
 ├❏ ${prefix}setname
 ├❏ ${prefix}setdesc
+├❏ ${prefix}antinsfw 1/0
 │
 ├──「 Game 」
 │
@@ -90,6 +91,7 @@ exports.help = (name, prefix) => {
 ├──「 Other 」
 │
 ├❏ ${prefix}quotemaker
+├❏ ${prefix}waifu
 │
 ╰───「 LoL Human 」`
 }

@@ -9,16 +9,16 @@ const fs = require('fs')
 const lolhuman = connect.lolhuman
 const bufferFakeReply = fs.readFileSync('./lol/resource/fakereply.jpg')
 
-exports.sendMessage = async(from, text) => {
-    await lolhuman.sendMessage(from, text, MessageType.text)
+exports.sendMessage = async(from, text, options = {}) => {
+    await lolhuman.sendMessage(from, text, MessageType.text, options)
 }
 
 exports.sendAudio = async(from, buffer) => {
     await lolhuman.sendMessage(from, buffer, MessageType.mp4Audio, { mimetype: Mimetype.mp4Audio, ptt: true })
 }
 
-exports.sendImage = async(from, buffer, caption = "") => {
-    await lolhuman.sendMessage(from, buffer, MessageType.image, { caption: caption })
+exports.sendImage = async(from, buffer, caption = "", mention = []) => {
+    await lolhuman.sendMessage(from, buffer, MessageType.image, { caption: caption, contextInfo: { mentionedJid: mention } })
 }
 
 exports.sendVideo = async(from, buffer, caption = "") => {
@@ -96,9 +96,8 @@ exports.sendFakeThumb = async(from, buffer, caption = "") => {
 exports.downloadMedia = async(media) => {
     const filePath = await lolhuman.downloadAndSaveMediaMessage(media, `./temp/${getRandomExt()}`)
     const fileStream = fs.createReadStream(filePath)
-    const fileSizeInBytes = fs.statSync(filePath).size
-    fs.unlinkSync(filePath)
-    return { size: fileSizeInBytes, stream: fileStream }
+    fs.existsSync(filePath) && fs.unlinkSync(filePath)
+    return fileStream
 }
 
 exports.hideTag = async(from, text) => {

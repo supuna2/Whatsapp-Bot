@@ -1,5 +1,5 @@
 {
-    "name": "self-bot",
+    "name": "whatsapp-bot",
     "version": "1.0.0",
     "description": "```cmd\r > pkg update && pkg upgrade\r > pkg install git -y\r > pkg install nodejs -y\r ```",
     "main": "index.js",
@@ -8,24 +8,25 @@
     },
     "dependencies": {
         "@adiwajshing/baileys": "^3.5.0",
-        "form-data": "^4.0.0",
-        "node-fetch": "^2.6.1"
+        "axios": "^0.21.1",
+        "form-data": "^4.0.0"
     },
     "devDependencies": {},
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node index.js"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/LoL-Human/Self-Bot.git"
+        "url": "git+https://github.com/LoL-Human/Whatsapp-Bot.git"
     },
     "keywords": [
-        "selfbot"
+        "whatsappbot"
     ],
     "author": "LoL Human",
     "license": "ISC",
     "bugs": {
-        "url": "https://github.com/LoL-Human/Self-Bot/issues"
+        "url": "https://github.com/LoL-Human/Whatsapp-Bot/issues"
     },
-    "homepage": "https://github.com/LoL-Human/Self-Bot#readme"
+    "homepage": "https://github.com/LoL-Human/Whatsapp-Bot#readme"
 }

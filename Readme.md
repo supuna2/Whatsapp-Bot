@@ -15,8 +15,8 @@
 
 ## Cloning this repo
 ```cmd
-> git clone https://github.com/LoL-Human/Self-Bot.git
-> cd Self-Bot
+> git clone https://github.com/LoL-Human/Whatsapp-Bot.git
+> cd Whatsapp-Bot
 ```
 
 ## Install the package
@@ -25,7 +25,7 @@
 ```
 
 ## Edit config file
-Edit the required value in `config.json`. You can get the api key at [`LoL Human Rest API`](http://api.lolhuman.xyz/).
+Edit the required value in `config.json`. You can get the api key at [`LoL Human Rest API`](https://api.lolhuman.xyz/).
 ```json
 {
     "apikey": "",
