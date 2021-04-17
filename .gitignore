@@ -4,3 +4,8 @@ test*
 test*.*
 lolhuman.json
 package-lock.json
+language/
+tictactoe.*
+temp/*
+game/
+game.js

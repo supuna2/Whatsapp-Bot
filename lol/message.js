@@ -1,8 +1,6 @@
 const connect = require('./connect')
-const chalk = require('chalk')
 
 const lolhuman = connect.lolhuman
-
 
 exports.runtime = () => {
     seconds = process.uptime()
@@ -34,9 +32,9 @@ exports.stats = (totalchat) => {
 *RAM :* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
 *MCC :* ${mcc}
 *MNC :* ${mnc}
-*Versi OS :* ${os_version}
-*Merk HP :* ${device_manufacturer}
-*Versi HP :* ${device_model}
+*OS Version :* ${os_version}
+*Device Manufactur :* ${device_manufacturer}
+*Device Model :* ${device_model}
 
 *Group Chat :* ${giid.length}
 *Personal Chat :* ${totalchat.length - giid.length}
@@ -51,9 +49,12 @@ exports.help = (name, prefix) => {
 ├❏ Name : ${name}
 ├❏ Prefix :「 ${prefix} 」
 │
-├❏ ${prefix}verify
 ├❏ ${prefix}help
 ├❏ ${prefix}owner
+├❏ ${prefix}verify
+├❏ ${prefix}sticker
+├❏ ${prefix}toimg
+├❏ ${prefix}tomp3
 │
 ├──「 Self / Onwer 」
 │
@@ -69,6 +70,8 @@ exports.help = (name, prefix) => {
 ├❏ ${prefix}leave
 ├❏ ${prefix}join
 ├❏ ${prefix}clearall
+├❏ ${prefix}del
+├❏ ${prefix}colong
 │
 ├──「 Group 」
 │
@@ -83,15 +86,24 @@ exports.help = (name, prefix) => {
 ├❏ ${prefix}setname
 ├❏ ${prefix}setdesc
 ├❏ ${prefix}antinsfw 1/0
+├❏ ${prefix}antilink 1/0
+├❏ ${prefix}antispam 1/0 (full sc)
 │
 ├──「 Game 」
 │
-├❏ ${prefix}tictactoe (Chat me to buy)
+├❏ ${prefix}tictactoe (full sc)
+├❏ ${prefix}caklontong (full sc)
+├❏ ${prefix}bagelstutorial (full sc)
+├❏ ${prefix}bagels (full sc)
+├❏ ${prefix}tebakgambar (full sc)
+├❏ ${prefix}akinator (full sc)
 │
 ├──「 Other 」
 │
 ├❏ ${prefix}quotemaker
 ├❏ ${prefix}waifu
+├❏ ${prefix}smoji
+├❏ ${prefix}jadwalsholat
 │
 ╰───「 LoL Human 」`
 }

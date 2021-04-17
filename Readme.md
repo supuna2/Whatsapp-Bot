@@ -43,7 +43,11 @@ Edit the required value in `config.json`. You can get the api key at [`LoL Human
 > npm start
 ```
 
+# Note
+* Chat me to buy full sc
+
 # Thanks To
 * [`Baileys`](https://github.com/adiwajshing/Baileys)
 * [`Mat`](https://github.com/mamet8)
 * [`Aqul`](https://github.com/zennn08)
+* [`Hexagon`](https://github.com/Hexagonz)

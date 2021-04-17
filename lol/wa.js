@@ -14,19 +14,24 @@ exports.sendMessage = async(from, text, options = {}) => {
 }
 
 exports.sendAudio = async(from, buffer) => {
-    await lolhuman.sendMessage(from, buffer, MessageType.mp4Audio, { mimetype: Mimetype.mp4Audio, ptt: true })
+    await lolhuman.sendMessage(from, buffer, MessageType.audio, { mimetype: Mimetype.mp4Audio, ptt: true })
 }
 
-exports.sendImage = async(from, buffer, caption = "", mention = []) => {
-    await lolhuman.sendMessage(from, buffer, MessageType.image, { caption: caption, contextInfo: { mentionedJid: mention } })
+exports.sendImage = async(from, buffer, caption = "") => {
+    await lolhuman.sendMessage(from, buffer, MessageType.image, { caption: caption })
+}
+
+exports.sendImageFile = async(from, filename, caption = "") => {
+    await lolhuman.sendMessage(from, fs.readFileSync(filename), MessageType.image, { caption: caption })
+    setTimeout(async() => { fs.existsSync(filename) && fs.unlinkSync(filename) }, 3000)
 }
 
 exports.sendVideo = async(from, buffer, caption = "") => {
     await lolhuman.sendMessage(from, buffer, MessageType.video, { caption: caption })
 }
 
-exports.sendSticker = async(from, buffer) => {
-    await lolhuman.sendMessage(from, buffer, MessageType.sticker)
+exports.sendSticker = async(from, buffer, quoted = "") => {
+    await lolhuman.sendMessage(from, buffer, MessageType.sticker, { quoted: quoted })
 }
 
 exports.sendPdf = async(from, buffer, title = "LoL Human.pdf") => {
@@ -46,8 +51,8 @@ exports.sendMention = async(from, text, mentioned) => {
     await lolhuman.sendMessage(from, text, MessageType.text, { contextInfo: { mentionedJid: mentioned } })
 }
 
-exports.sendImageMention = async(from, buffer, text, mentioned) => {
-    await lolhuman.sendMessage(from, buffer, MessageType.image, { contextInfo: { mentionedJid: [mentioned], participant: [mentioned] }, caption: text })
+exports.sendImageMention = async(from, buffer, caption = "", mentioned) => {
+    await lolhuman.sendMessage(from, buffer, MessageType.image, { contextInfo: { mentionedJid: mentioned }, caption: caption })
 }
 
 exports.sendFakeStatus = async(from, text, faketext, mentioned = []) => {
@@ -94,10 +99,11 @@ exports.sendFakeThumb = async(from, buffer, caption = "") => {
 }
 
 exports.downloadMedia = async(media) => {
-    const filePath = await lolhuman.downloadAndSaveMediaMessage(media, `./temp/${getRandomExt()}`)
-    const fileStream = fs.createReadStream(filePath)
-    fs.existsSync(filePath) && fs.unlinkSync(filePath)
-    return fileStream
+    return await lolhuman.downloadAndSaveMediaMessage(media, `./temp/${getRandomExt()}`).then(path => {
+        let fileStream = fs.createReadStream(path)
+        setTimeout(async() => { fs.existsSync(path) && fs.unlinkSync(path) }, 5000)
+        return fileStream
+    })
 }
 
 exports.hideTag = async(from, text) => {

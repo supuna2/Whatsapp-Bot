@@ -20,6 +20,10 @@ const owner = config.owner
 const mods = config.mods
 var public = config.public
 
+// Declare variable
+const packageSticker = "LoL"
+const authorSticker = "Human"
+
 // import database
 const user = JSON.parse(fs.readFileSync("./lol/database/user.json"))
 const antinsfw = JSON.parse(fs.readFileSync("./lol/database/group/antinsfw.json"))
@@ -161,6 +165,11 @@ lolhuman.on('chat-update', async(lol) => {
             if (Number(result.result.replace("%", "")) >= 30) return wa.sendFakeStatus(from, "NSFW Detected with score: " + result.result, "WARNING")
         }
 
+        // Anti Link
+        if (antilink.includes(from) && body.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/) && !isCmd && !istMe) {
+            return wa.sendFakeStatus(from, "Link Detected: " + body.match(/(https?:\/\/[^ ]*)/)[1], "WARNING")
+        }
+
 
         switch (command) {
             case 'owner':
@@ -172,13 +181,72 @@ lolhuman.on('chat-update', async(lol) => {
                 await wa.sendFakeStatus(from, text, "📖 Help")
                 break
             case 'verify':
+                if (user.hasOwnProperty(senderNumber)) return await wa.sendFakeStatus(from, 'Maaf Anda telah terdaftar sebelumnya', 'VERIFIED')
                 username = await wa.getUserName(sender)
                 username = encodeURI(username)
                 photo = await wa.getPictProfile(sender)
-                result = await getBuffer(`https://api.lolhuman.xyz/api/welcomeimage?apikey=${apikey}&img=${photo}&text=${username}`)
-                text = `Hello, @${senderNumber}\n\n`
-                text += `Verifikasi telah berhasil dilakukan. Silahkan ketik ${prefix}help untuk melihat list command.`
-                await wa.sendImage(from, result, text, [sender])
+                await getBuffer(`https://api.lolhuman.xyz/api/welcomeimage?apikey=${apikey}&img=${photo}&text=${username}`)
+                    .then(async(image) => {
+                        var data = {}
+                        data["name"] = senderUsername
+                        data["language"] = "id"
+                        data["at"] = moment.tz('Asia/Jakarta').format('HH:mm:ss DD MMMM YYYY')
+                        user[senderNumber] = data
+                        text = language.verify.format({ nomor: senderNumber, prefix: prefix })
+                        await wa.sendImageMention(from, image, text, [sender]).then(() => {
+                            fs.writeFileSync('./lol/database/user.json', JSON.stringify(user))
+                        })
+                    })
+                break
+            case 'sticker':
+                if ((isQuotedImage && isImage) && (isQuotedVideo && isVideo)) return await reply('Gambarnya mana?')
+                var filepath = await lolhuman.downloadAndSaveMediaMessage(media, filename)
+                var randomName = getRandomExt('.webp')
+                ffmpeg(`./${filepath}`)
+                    .input(filepath)
+                    .on('error', () => {
+                        fs.unlinkSync(filepath)
+                        reply("Terjadi kesalahan saat mengconvert sticker.")
+                    })
+                    .on('end', () => {
+                        buffer = fs.readFileSync(randomName)
+                        wa.sendSticker(from, buffer, lol)
+                        fs.unlinkSync(filepath)
+                        fs.unlinkSync(randomName)
+                    })
+                    .addOutputOptions([`-vcodec`, `libwebp`, `-vf`, `scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
+                    .toFormat('webp')
+                    .save(randomName)
+                break
+            case 'toimg':
+                if (!isQuotedSticker) return await reply('Stickernya mana?')
+                await lolhuman.downloadAndSaveMediaMessage(media, filename).then(async(path) => {
+                    let randomName = getRandomExt(".png")
+                    randomName = './temp/' + randomName
+                    exec(`ffmpeg -i ${path} ${randomName}`, async(err) => {
+                        fs.unlinkSync(path)
+                        if (err) return await reply("Terjadi kesalahan saat mengconvert gambar.")
+                        let buffer = fs.readFileSync(randomName)
+                        await wa.sendImage(from, buffer).then(() => {
+                            fs.unlinkSync(randomName)
+                        })
+                    })
+                })
+                break
+            case 'tomp3':
+                if (!isQuotedVideo && !isVideo) return await reply('Videonya mana?')
+                await lolhuman.downloadAndSaveMediaMessage(media, filename).then(async(path) => {
+                    let randomName = getRandomExt(".mp3")
+                    randomName = './temp/' + randomName
+                    exec(`ffmpeg -i ${path} ${randomName}`, async(err) => {
+                        fs.unlinkSync(path)
+                        if (err) return await reply("Terjadi kesalahan saat mengconvert gambar.")
+                        let buffer = fs.readFileSync(randomName)
+                        await wa.sendAudio(from, buffer).then(() => {
+                            fs.unlinkSync(randomName)
+                        })
+                    })
+                })
                 break
 
 
@@ -271,6 +339,23 @@ lolhuman.on('chat-update', async(lol) => {
                     await lolhuman.modifyChat(chat.jid, "delete")
                 }
                 await wa.sendFakeStatus(from, "Success clear all chat", "CLEAR CHAT")
+                break
+            case 'del':
+                if (!isOwner && !istMe) return await reply(language.error.notOwner)
+                await lolhuman.deleteMessage(from, { id: lol.message.extendedTextMessage.contextInfo.stanzaId, remoteJid: from, fromMe: true })
+                break
+            case 'colong':
+                if (!isOwner && !istMe) return await reply(language.error.notOwner)
+                if (!isQuotedSticker) return await reply('Stickernya mana?')
+                await wa.downloadMedia(media).then(async(filebuffer) => {
+                    formdata = new FormData()
+                    formdata.append('img', filebuffer, filebuffer.fileName)
+                    formdata.append('package', packageSticker)
+                    formdata.append('author', authorSticker)
+                    await postBuffer(`https://api.lolhuman.xyz/api/convert/towebpauthor?apikey=${apikey}`, formdata).then(async(image) => {
+                        await wa.sendSticker(from, image)
+                    })
+                })
                 break
 
 
@@ -367,23 +452,66 @@ lolhuman.on('chat-update', async(lol) => {
                 }
                 fs.writeFileSync("./lol/database/group/antinsfw.json", JSON.stringify(antinsfw))
                 break
+            case 'antilink':
+                if (!isGroup) return await reply('Maap, command hanya untuk group')
+                if (!isAdmin) return await reply('Sorry nih sorry, lu bukan admin')
+                if (args[0] === '1') {
+                    if (antilink.indexOf(from) === -1) antilink.push(from)
+                    await wa.sendFakeStatus(from, "Anti Link telah diaktifkan di group " + groupName, "GROUP SETTING")
+                } else if (args[0] === '0') {
+                    antilink.splice(from, 1)
+                    await wa.sendFakeStatus(from, "Anti Link telah dinonaktifkan di group " + groupName, "GROUP SETTING")
+                } else { return await reply(`Example: ${prefix}${command} 1/0`) }
+                fs.writeFileSync("./lol/database/group/antilink.json", JSON.stringify(antilink))
+                break
 
 
             case 'quotemaker':
                 if (!isQuotedImage && !isImage) return await reply('Gambarnya mana?')
                 if (args.length == 0) return await reply('Quotesnya mana oy')
-                media = isQuotedImage ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
-                filebuffer = await wa.downloadMedia(media)
-                formdata = new FormData()
-                formdata.append('img', filebuffer, filebuffer.fileName)
-                formdata.append('text', args.join(" "));
-                result = await postBuffer(`https://api.lolhuman.xyz/api/quotemaker3?apikey=${apikey}`, formdata)
-                await wa.sendImage(from, result)
+                await wa.downloadMedia(media).then(async(filebuffer) => {
+                    formdata = new FormData()
+                    formdata.append('img', filebuffer, filebuffer.fileName)
+                    formdata.append('text', args.join(" "))
+                    await postBuffer(`https://api.lolhuman.xyz/api/quotemaker3?apikey=${apikey}`, formdata).then(async(image) => {
+                        await wa.sendImageFile(from, image)
+                    })
+                })
+                break
+            case 'waifu':
+                await getBuffer(`https://api.lolhuman.xyz/api/random/waifu?apikey=${apikey}`).then(async(image) => {
+                    await wa.sendImage(from, image)
+                })
+                break
+            case 'smoji':
+                if (args.length == 0) return reply(`Emojinya mana oy`)
+                emoji = args[0]
+                try { emoji = encodeURI(emoji[0]) } catch { emoji = encodeURI(emoji) }
+                result = await getJson(`https://api.lolhuman.xyz/api/smoji3/${emoji}?apikey=${apikey}`)
+                await getBuffer(`https://api.lolhuman.xyz/api/convert/towebp?apikey=${apikey}&img=${result.result.emoji.whatsapp}&package=${packageSticker}&author=${authorSticker}`).then(async(sticker) => {
+                    await wa.sendSticker(from, sticker)
+                })
+                break
+            case 'jadwalsholat':
+                if (args.length == 0) return reply(`_Example: ${prefix}${command} yogyakarta_`)
+                var daerah = args.join(" ")
+                var result = await getJson(`https://api.lolhuman.xyz/api/sholat/${daerah}?apikey=${apikey}`)
+                result = result.result
+                text = `╭───「 Jadwal Sholat 」\n`
+                text += `├❏ Wilayah : ${result.wilayah}\n│\n`
+                text += `├❏ Tanggal : ${result.tanggal}\n│\n`
+                text += `├❏ \`\`\`Sahur   : ${result.sahur}\`\`\`\n`
+                text += `├❏ \`\`\`Imsak   : ${result.imsak}\`\`\`\n`
+                text += `├❏ \`\`\`Subuh   : ${result.subuh}\`\`\`\n`
+                text += `├❏ \`\`\`Dhuha   : ${result.dhuha}\`\`\`\n`
+                text += `├❏ \`\`\`Dzuhur  : ${result.dzuhur}\`\`\`\n`
+                text += `├❏ \`\`\`Ashar   : ${result.ashar}\`\`\`\n`
+                text += `├❏ \`\`\`Maghrib : ${result.maghrib}\`\`\`\n`
+                text += `├❏ \`\`\`Isya    : ${result.isya}\`\`\`\n│\n`
+                text += `╰───「 LoL Human 」`
+                await wa.sendFakeStatus(from, text, result.wilayah.toUpperCase())
                 break
 
-            case 'waifu':
-                result = await getBuffer(`https://api.lolhuman.xyz/api/random/waifu?apikey=${apikey}`)
-                await wa.sendImage(from, result)
             default:
                 if (body.startsWith(">")) {
                     if (!isOwner) return await reply('Maap ni, gw gk kenal lu')
