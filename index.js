@@ -7,6 +7,7 @@ const chalk = require('chalk')
 const fs = require("fs")
 
 const help = require("./lol/help")
+const postBufferFile = help.postBufferFile
 const postBuffer = help.postBuffer
 const getBuffer = help.getBuffer
 const postJson = help.postJson
@@ -27,6 +28,7 @@ const authorSticker = "Human"
 // import database
 const user = JSON.parse(fs.readFileSync("./lol/database/user.json"))
 const antinsfw = JSON.parse(fs.readFileSync("./lol/database/group/antinsfw.json"))
+const antilink = JSON.parse(fs.readFileSync("./lol/database/group/antilink.json"))
 
 conn.connect()
 const lolhuman = conn.lolhuman
@@ -473,7 +475,7 @@ lolhuman.on('chat-update', async(lol) => {
                     formdata = new FormData()
                     formdata.append('img', filebuffer, filebuffer.fileName)
                     formdata.append('text', args.join(" "))
-                    await postBuffer(`https://api.lolhuman.xyz/api/quotemaker3?apikey=${apikey}`, formdata).then(async(image) => {
+                    await postBufferFile(`https://api.lolhuman.xyz/api/quotemaker3?apikey=${apikey}`, formdata).then(async(image) => {
                         await wa.sendImageFile(from, image)
                     })
                 })

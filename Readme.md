@@ -44,7 +44,7 @@ Edit the required value in `config.json`. You can get the api key at [`LoL Human
 ```
 
 # Note
-* Chat me to buy full sc
+* Chat me to buy full sc at my [`WhatsApp`](http://wa.me/62895418200111).
 
 # Thanks To
 * [`Baileys`](https://github.com/adiwajshing/Baileys)

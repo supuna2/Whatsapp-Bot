@@ -23,7 +23,7 @@ exports.sendImage = async(from, buffer, caption = "") => {
 
 exports.sendImageFile = async(from, filename, caption = "") => {
     await lolhuman.sendMessage(from, fs.readFileSync(filename), MessageType.image, { caption: caption })
-    setTimeout(async() => { fs.existsSync(filename) && fs.unlinkSync(filename) }, 3000)
+    setTimeout(async() => { fs.existsSync(filename) && fs.unlinkSync(filename) }, 5000)
 }
 
 exports.sendVideo = async(from, buffer, caption = "") => {
@@ -47,8 +47,8 @@ exports.sendContact = async(from, nomor, nama) => {
     await lolhuman.sendMessage(from, { displayname: nama, vcard: vcard }, MessageType.contact)
 }
 
-exports.sendMention = async(from, text, mentioned) => {
-    await lolhuman.sendMessage(from, text, MessageType.text, { contextInfo: { mentionedJid: mentioned } })
+exports.sendMention = async(from, text, mentioned, quoted = "") => {
+    await lolhuman.sendMessage(from, text, MessageType.text, { quoted: quoted, contextInfo: { mentionedJid: mentioned } })
 }
 
 exports.sendImageMention = async(from, buffer, caption = "", mentioned) => {
