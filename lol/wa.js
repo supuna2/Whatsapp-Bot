@@ -7,7 +7,6 @@ const { getRandomExt } = require("./help");
 const fs = require('fs')
 
 const lolhuman = connect.lolhuman
-const bufferFakeReply = fs.readFileSync('./lol/resource/fakereply.jpg')
 
 exports.sendMessage = async(from, text, options = {}) => {
     await lolhuman.sendMessage(from, text, MessageType.text, options)
@@ -17,8 +16,17 @@ exports.sendAudio = async(from, buffer) => {
     await lolhuman.sendMessage(from, buffer, MessageType.audio, { mimetype: Mimetype.mp4Audio, ptt: true })
 }
 
+exports.sendAudioUrl = async(from, url) => {
+    await lolhuman.sendMessage(from, { url: url }, MessageType.audio, { mimetype: Mimetype.mp4Audio, ptt: true })
+}
+
 exports.sendImage = async(from, buffer, caption = "") => {
     await lolhuman.sendMessage(from, buffer, MessageType.image, { caption: caption })
+}
+
+exports.sendImageUrl = async(from, url, caption = "", option = {}) => {
+    option["caption"] = caption
+    await lolhuman.sendMessage(from, { url: url }, MessageType.image, option)
 }
 
 exports.sendImageFile = async(from, filename, caption = "") => {
@@ -30,8 +38,16 @@ exports.sendVideo = async(from, buffer, caption = "") => {
     await lolhuman.sendMessage(from, buffer, MessageType.video, { caption: caption })
 }
 
+exports.sendVideoUrl = async(from, url, caption = "") => {
+    await lolhuman.sendMessage(from, { url: url }, MessageType.video, { caption: caption })
+}
+
 exports.sendSticker = async(from, buffer, quoted = "") => {
     await lolhuman.sendMessage(from, buffer, MessageType.sticker, { quoted: quoted })
+}
+
+exports.sendStickerUrl = async(from, url, quoted = "") => {
+    await lolhuman.sendMessage(from, { url: url }, MessageType.sticker, { quoted: quoted })
 }
 
 exports.sendPdf = async(from, buffer, title = "LoL Human.pdf") => {
@@ -56,8 +72,10 @@ exports.sendImageMention = async(from, buffer, caption = "", mentioned) => {
 }
 
 exports.sendFakeStatus = async(from, text, faketext, mentioned = []) => {
+    const bufferFakeReply = fs.readFileSync('./lol/resource/fakereply.jpg')
     const options = {
         contextInfo: {
+            stanzaId: "B826873620DD5947E683E3ABE663F263",
             participant: '0@s.whatsapp.net',
             remoteJid: 'status@broadcast',
             quotedMessage: {
@@ -72,9 +90,11 @@ exports.sendFakeStatus = async(from, text, faketext, mentioned = []) => {
     await lolhuman.sendMessage(from, text, MessageType.text, options)
 }
 
-exports.fakeStatusForwarded = async(from, text, faketext) => {
+exports.fakeStatusForwarded = async(from, text, faketext, image = false, mentioned = []) => {
+    const bufferFakeReply = fs.readFileSync('./lol/resource/fakereply.jpg')
     const options = {
         contextInfo: {
+            stanzaId: "B826873620DD5947E683E3ABE663F263",
             forwardingScore: 999,
             isForwarded: true,
             participant: '0@s.whatsapp.net',
@@ -84,8 +104,14 @@ exports.fakeStatusForwarded = async(from, text, faketext) => {
                     caption: faketext,
                     jpegThumbnail: bufferFakeReply
                 }
-            }
+            },
+            mentionedJid: mentioned
         }
+    }
+    if (image) {
+        options["thumbnail"] = fs.readFileSync('./lol/resource/fakethumb.jpg')
+        options["caption"] = text
+        return await lolhuman.sendMessage(from, fs.readFileSync('./lol/resource/help.jpg'), MessageType.image, options)
     }
     await lolhuman.sendMessage(from, text, MessageType.text, options)
 }

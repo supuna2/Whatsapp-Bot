@@ -1,4 +1,5 @@
 const { MessageType, GroupSettingChange } = require("@adiwajshing/baileys")
+const { exec, execSync } = require('child_process')
 const FormData = require('form-data')
 const conn = require("./lol/connect")
 const msg = require("./lol/message")
@@ -7,14 +8,10 @@ const chalk = require('chalk')
 const fs = require("fs")
 
 const help = require("./lol/help")
-const postBufferFile = help.postBufferFile
-const postBuffer = help.postBuffer
-const getBuffer = help.getBuffer
-const postJson = help.postJson
-const getJson = help.getJson
+const { postBuffer, postBufferFile, postJson, getBuffer, getJson, getRandomExt, sleep, countdownTime, randomChoice } = help
 
 // import config file
-const config = JSON.parse(fs.readFileSync("./config.json"))
+const config = require("./config.json")
 const apikey = config.apikey
 var prefix = config.prefix
 const owner = config.owner
@@ -38,25 +35,29 @@ lolhuman.on('group-participants-update', async(chat) => {
         var member = chat.participants
         for (var x of member) {
             try {
-                if (x == lolhuman.user.jid) return
-                var photo = await wa.getPictProfile(x)
-                var username = await wa.getUserName(x) || "Guest"
+                if (x == lolhuman.user.jid || !public) return
                 var from = chat.jid
+                var photouser = await wa.getPictProfile(x)
+                var photogroup = await wa.getPictProfile(from)
+                var username = await wa.getUserName(x)
                 var group = await lolhuman.groupMetadata(from)
+                param = `?apikey=${apikey}&img1=${photouser}&img2=${photogroup}&background=https://i.ibb.co/8B6Q84n/LTqHsfYS.jpg&username=${username}&member=${group.participants.length}&groupname=${group.subject}`
 
                 // Member Join
-                if (chat.action == 'add' && public) {
-                    getBuffer(`https://api.lolhuman.xyz/api/welcomeimage?apikey=${apikey}&img=${photo}&text=${username}`).then(image => {
-                        text = `${username}, Welkam to ${group.subject}`
-                        wa.sendImage(from, image, text)
-                    })
+                if (chat.action == 'add') {
+                    console.log(chalk.whiteBright("├"), chalk.keyword("aqua")("[  JOINS  ]"), chalk.keyword("white")(x.split("@")[0]), "to", chalk.keyword("yellow")(group.subject))
+                    text = "@{nomor}, Welkam to {groupname}".format({ nomor: x.split("@")[0], groupname: group.subject })
+                    image = `https://api.lolhuman.xyz/api/base/welcome${param}`
+                    await wa.sendImageUrl(from, image, text, { contextInfo: { mentionedJid: [x] } })
                 }
                 // Member Leave
-                if (chat.action == 'remove' && public) {
+                if (chat.action == 'remove') {
+                    console.log(chalk.whiteBright("├"), chalk.keyword("aqua")("[ LEAVE ]"), chalk.keyword("white")(x.split("@")[0]), "from", chalk.keyword("yellow")(group.subject))
                     text = `${username}, Sayonara 👋`
-                    await wa.sendMessage(from, text)
+                    image = `https://api.lolhuman.xyz/api/base/leave${param}`
+                    await wa.sendImageUrl(from, image, text, { contextInfo: { mentionedJid: [x] } })
                 }
-            } catch {
+            } catch (e) {
                 continue
             }
         }
@@ -109,7 +110,7 @@ lolhuman.on('chat-update', async(lol) => {
         const isAdmin = groupAdmins.includes(sender)
         const botAdmin = groupAdmins.includes(lolhuman.user.jid)
         const totalChat = lolhuman.chats.all()
-        const istMe = senderNumber == botNumber
+        const itsMe = senderNumber == botNumber
         const isOwner = senderNumber == owner || senderNumber == botNumber || mods.includes(senderNumber)
 
         const mentionByTag = type == "extendedTextMessage" && lol.message.extendedTextMessage.contextInfo != null ? lol.message.extendedTextMessage.contextInfo.mentionedJid : []
@@ -157,6 +158,8 @@ lolhuman.on('chat-update', async(lol) => {
             await reply("Prefix saat ini: " + prefix)
         }
 
+        var media = isQuoted && type == 'extendedTextMessage' ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
+        var filename = './temp/' + getRandomExt()
 
         // Anti NSFW
         if (isImage && isGroup && antinsfw.includes(from)) {
@@ -168,7 +171,7 @@ lolhuman.on('chat-update', async(lol) => {
         }
 
         // Anti Link
-        if (antilink.includes(from) && body.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/) && !isCmd && !istMe) {
+        if (antilink.includes(from) && body.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/) && !isCmd && !itsMe) {
             return wa.sendFakeStatus(from, "Link Detected: " + body.match(/(https?:\/\/[^ ]*)/)[1], "WARNING")
         }
 
@@ -254,7 +257,7 @@ lolhuman.on('chat-update', async(lol) => {
 
                 // Self & Owner //
             case 'public':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (public) return await reply('Dah public daritadi mank')
                 config["public"] = true
                 public = true
@@ -262,7 +265,7 @@ lolhuman.on('chat-update', async(lol) => {
                 await wa.sendFakeStatus(from, "*Success changed to public mode*", "PUBLIC MODE")
                 break
             case 'self':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (!public) return await reply('Dah private daritadi mank')
                 config["public"] = false
                 public = false
@@ -270,7 +273,7 @@ lolhuman.on('chat-update', async(lol) => {
                 await wa.sendFakeStatus(from, "*Success changed to self mode*", "SELF MODE")
                 break
             case 'setprefix':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 var newPrefix = args[0] || ""
                 config["prefix"] = newPrefix
                 prefix = newPrefix
@@ -278,14 +281,14 @@ lolhuman.on('chat-update', async(lol) => {
                 await reply("Success change prefix to: " + prefix)
                 break
             case 'broadcast':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 text = args.join(" ")
                 for (let chat of totalChat) {
                     await wa.sendMessage(chat.jid, text)
                 }
                 break
             case 'setthumb':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (!isQuotedImage && !isImage) return await reply('Gambarnya mana?')
                 media = isQuotedImage ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 media = await lolhuman.downloadMediaMessage(media)
@@ -293,19 +296,19 @@ lolhuman.on('chat-update', async(lol) => {
                 await wa.sendFakeStatus(from, "*Succes changed image for fakethumb*", "SUCCESS")
                 break
             case 'fakethumb':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (!isQuotedImage && !isImage) return await reply('Gambarnya mana?')
                 media = isQuotedImage ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 media = await lolhuman.downloadMediaMessage(media)
                 await wa.sendFakeThumb(from, media)
                 break
             case 'stats':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 text = await msg.stats(totalChat)
                 await wa.sendFakeStatus(from, text, "BOT STATS")
                 break
             case 'block':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (isGroup) {
                     if (mentionUser.length == 0) return await reply("Tag yang mau di block pack")
                     return await wa.blockUser(sender, true)
@@ -313,7 +316,7 @@ lolhuman.on('chat-update', async(lol) => {
                 await wa.blockUser(sender, true)
                 break
             case 'unblock':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (isGroup) {
                     if (mentionUser.length == 0) return await reply("Tag yang mau di unblock pack")
                     return await wa.blockUser(sender, false)
@@ -321,7 +324,7 @@ lolhuman.on('chat-update', async(lol) => {
                 await wa.blockUser(sender, false)
                 break
             case 'leave':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
                 reply(`Akan keluar dari group ${groupName} dalam 3 detik`).then(async() => {
                     await help.sleep(3000)
@@ -329,47 +332,53 @@ lolhuman.on('chat-update', async(lol) => {
                 })
                 break
             case 'join':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 if (isGroup) return await reply('Maap, command hanya untuk private')
                 if (args.length == 0) return await reply('Link group nya mana bwank')
                 var link = args[0].replace("https://chat.whatsapp.com/", "")
                 await lolhuman.acceptInvite(link)
                 break
             case 'clearall':
-                if (!isOwner && !istMe) return await reply('Maap ni, gw gk kenal lu')
+                if (!isOwner && !itsMe) return await reply('Maap ni, gw gk kenal lu')
                 for (let chat of totalChat) {
                     await lolhuman.modifyChat(chat.jid, "delete")
                 }
                 await wa.sendFakeStatus(from, "Success clear all chat", "CLEAR CHAT")
                 break
             case 'del':
-                if (!isOwner && !istMe) return await reply(language.error.notOwner)
+                if (!isOwner && !itsMe) return await reply("Maap ni, gw gk kenal lu")
                 await lolhuman.deleteMessage(from, { id: lol.message.extendedTextMessage.contextInfo.stanzaId, remoteJid: from, fromMe: true })
                 break
             case 'colong':
-                if (!isOwner && !istMe) return await reply(language.error.notOwner)
+                if (!isOwner && !itsMe) return await reply("Maap ni, gw gk kenal lu")
                 if (!isQuotedSticker) return await reply('Stickernya mana?')
-                await wa.downloadMedia(media).then(async(filebuffer) => {
-                    formdata = new FormData()
-                    formdata.append('img', filebuffer, filebuffer.fileName)
-                    formdata.append('package', packageSticker)
-                    formdata.append('author', authorSticker)
-                    await postBuffer(`https://api.lolhuman.xyz/api/convert/towebpauthor?apikey=${apikey}`, formdata).then(async(image) => {
-                        await wa.sendSticker(from, image)
+                await lolhuman.downloadAndSaveMediaMessage(media, filename).then(async(filepath) => {
+                    var randomName = getRandomExt(".webp")
+                    exec(`webpmux -set exif ./lol/resource/exif.exif ${filepath} -o ./temp/${randomName}`).on("close", async(data) => {
+                        await wa.sendSticker(from, fs.readFileSync(`./temp/${randomName}`))
+                        fs.unlinkSync(filepath)
+                        fs.unlinkSync(`./temp/${randomName}`)
                     })
                 })
+                break
+            case 'exif':
+                if (!isOwner && !itsMe) return await reply("Maap ni, gw gk kenal lu")
+                if (args.length == 0) return await reply(`Example: ${prefix}${command} LoL|Human`)
+                var text = args.join(" ").split("|")
+                await help.exifUpdate(text[0], text[1])
+                await wa.sendFakeStatus(from, "Succes Mengubah Exif", "EXIF")
                 break
 
 
                 // Group //
             case 'hidetag':
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
-                if (!isAdmin && !isOwner && !istMe) return await reply('Sorry nih sorry, lu bukan admin')
+                if (!isAdmin && !isOwner && !itsMe) return await reply('Sorry nih sorry, lu bukan admin')
                 await wa.hideTag(from, args.join(" "))
                 break
             case 'imagetag':
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
-                if (!isAdmin && !isOwner && !istMe) return await reply('Sorry nih sorry, lu bukan admin')
+                if (!isAdmin && !isOwner && !itsMe) return await reply('Sorry nih sorry, lu bukan admin')
                 if (!isQuotedImage && !isImage) return await reply('Gambarnya mana?')
                 media = isQuotedImage ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 buffer = await lolhuman.downloadMediaMessage(media)
@@ -377,7 +386,7 @@ lolhuman.on('chat-update', async(lol) => {
                 break
             case 'stickertag':
                 if (!isGroup) return await reply('Maap, command hanya untuk group')
-                if (!isAdmin && !isOwner && !istMe) return await reply('Sorry nih sorry, lu bukan admin')
+                if (!isAdmin && !isOwner && !itsMe) return await reply('Sorry nih sorry, lu bukan admin')
                 if (!isQuotedImage && !isImage) return await reply('Stickernya mana?')
                 media = isQuotedSticker ? JSON.parse(JSON.stringify(lol).replace('quotedM', 'm')).message.extendedTextMessage.contextInfo : lol
                 buffer = await lolhuman.downloadMediaMessage(media)
@@ -521,7 +530,6 @@ lolhuman.on('chat-update', async(lol) => {
                 }
         }
     } catch (e) {
-        throw e
         console.log(chalk.whiteBright("├"), chalk.keyword("aqua")("[  ERROR  ]"), chalk.keyword("red")(e))
     }
 })

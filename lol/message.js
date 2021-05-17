@@ -1,4 +1,5 @@
 const connect = require('./connect')
+const config = require('../config.json')
 
 const lolhuman = connect.lolhuman
 
@@ -108,7 +109,7 @@ exports.help = (name, prefix) => {
 ├❏ ${prefix}smoji
 ├❏ ${prefix}jadwalsholat
 │
-╰───「 LoL Human 」`
+╰───「 ${config.botname} 」`
 }
 
 exports.admin = (list, groupName) => {
@@ -122,7 +123,6 @@ exports.admin = (list, groupName) => {
         text += `├❏ @${x.split("@")[0]}\n`
     }
     text += `│
-╰───「 LoL Human 」
-`
+╰───「 ${config.botname} 」`
     return text
 }
